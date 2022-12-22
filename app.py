@@ -1,15 +1,32 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask import url_for
 from markupsafe import escape
 # 首先我们从 flask 包导入 Flask 类，通过实例化这个类，创建一个程序对象 app
 app = Flask(__name__)
+
+
+# fake data
+name = 'Jiaxiang Chen'
+movies = [
+    {'title': 'My Neighbor Totoro', 'year': '1988'},
+    {'title': 'Dead Poets Society', 'year': '1989'},
+    {'title': 'A Perfect World', 'year': '1993'},
+    {'title': 'Leon', 'year': '1994'},
+    {'title': 'Mahjong', 'year': '1996'},
+    {'title': 'Swallowtail Butterfly', 'year': '1996'},
+    {'title': 'King of Comedy', 'year': '1999'},
+    {'title': 'Devils on the Doorstep', 'year': '1999'},
+    {'title': 'WALL-E', 'year': '2008'},
+    {'title': 'The Pork of Music', 'year': '2012'},
+]
+
 
 # 我们要注册一个处理函数，这个函数是处理某个请求的处理函数，
 # Flask 官方把它叫做视图函数（view funciton），你可以理解为“请求处理函数”。
 @app.route('/') #我们只需要写出相对地址，主机地址、端口号等都不需要写出。
 def hello():
     # 视图函数的名字是自由定义的，和 URL 规则无关
-    return '<h1>Hello Totoro!</h1><img src="http://helloflask.com/totoro.gif">'
+    return render_template('index.html', name=name, movies=movies)
 
 # 一个视图函数也可以绑定多个 URL，这通过附加多个装饰器实现，比如：
 # @app.route('/')
