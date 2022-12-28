@@ -21,11 +21,11 @@ db = SQLAlchemy(app)  # 初始化扩展，传入程序实例 app
 # 我们要注册一个处理函数，这个函数是处理某个请求的处理函数，
 # Flask 官方把它叫做视图函数（view funciton），你可以理解为“请求处理函数”。
 @app.route('/') #我们只需要写出相对地址，主机地址、端口号等都不需要写出。
-def hello():
+def index():
     # 视图函数的名字是自由定义的，和 URL 规则无关
-    user = User.query.first()  # 读取用户记录
+    # user = User.query.first()  # 读取用户记录
     movies = Movie.query.all()  # 读取所有电影记录
-    return render_template('index.html', name=user.name, movies=movies)
+    return render_template('index.html', movies=movies)
 
 # 一个视图函数也可以绑定多个 URL，这通过附加多个装饰器实现，比如：
 # @app.route('/')
@@ -73,6 +73,7 @@ def initdb(drop):
     db.create_all()
     click.echo('Initialize databse.')
 
+# 注册一个创建假用户的命令：forge
 @app.cli.command()
 def forge():
     """Generate fake data."""
@@ -101,3 +102,13 @@ def forge():
 
     db.session.commit()
     click.echo('Done.')
+
+@app.errorhandler(404)
+def page_not_found(e): # 接受异常对象作为参数
+    return render_template('404.html'), 404
+
+# 模板上下文处理函数
+@app.context_processor
+def inject_user_name():
+    user = User.query.first()
+    return {'user': user}
