@@ -2,7 +2,7 @@ import os
 import sys
 
 from flask import Flask, render_template
-from flask import url_for
+from flask import url_for, request, flash, redirect
 from markupsafe import escape
 from flask_sqlalchemy import SQLAlchemy  # 导入扩展类
 WIN = sys.platform.startswith('win')
@@ -14,14 +14,29 @@ else:  # 否则使用四个斜线
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = prefix + os.path.join(app.root_path, 'data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # 关闭对模型修改的监控
+app.config['SECRET_KEY'] = 'dev'  # 等同于 app.secret_key = 'dev' ---- 设置签名所需的密钥
 # 在扩展类实例化前加载配置
 db = SQLAlchemy(app)  # 初始化扩展，传入程序实例 app
 
 
 # 我们要注册一个处理函数，这个函数是处理某个请求的处理函数，
 # Flask 官方把它叫做视图函数（view funciton），你可以理解为“请求处理函数”。
-@app.route('/') #我们只需要写出相对地址，主机地址、端口号等都不需要写出。
+@app.route('/', methods=['GET', 'POST']) #我们只需要写出相对地址(我们希望这个函数要处理的收到请求的 url 地址)，主机地址、端口号等都不需要写出。
 def index():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        year = request.form.get('year')
+        # 验证数据
+        if not title or not year or len(year) > 4 or len(title) > 60:
+            flash('Invalid input.')  # 显示错误提示
+            return redirect(url_for('index'))  # 重定向回主页
+        # 保存表单数据到数据库
+        movie = Movie(title=title, year=year)
+        db.session.add(movie)
+        db.session.commit()
+        flash('Item created.')  # 显示成功创建的提示
+        return redirect(url_for('index'))  # 重定向回主页
+
     # 视图函数的名字是自由定义的，和 URL 规则无关
     # user = User.query.first()  # 读取用户记录
     movies = Movie.query.all()  # 读取所有电影记录
@@ -42,15 +57,18 @@ def user_page(name):
     # 需要使用 MarkupSafe（Flask 的依赖之一）提供的 escape() 函数对 name 变量进行转义处理，
     # 比如把 < 转换成 &lt;。这样在返回响应时浏览器就不会把它们当做代码执行。
     return f'User: {escape(name)}'
+    
 
 @app.route('/test')
+@app.route('/test1')
 def test_url_for():
-    print(url_for('hello')) # /
+    print(url_for('index')) # /
     print(url_for('user_page', name='Jiaxiang')) # /user/Jiaxiang
     print(url_for('user_page', name='Wu Fei')) # /user/Wu%20Fei
-    print(url_for('test_url_for'))  # 输出：/test
+    print(url_for('test_url_for'))  # 输出：/test1 （最后一个注册的 url 
     # 下面这个调用传入了多余的关键字参数，它们会被作为查询字符串附加到 URL 后面。
     print(url_for('test_url_for', num=2))  # 输出：/test?num=2
+    print(url_for('edit', movie_id=2))  # /movie/edit/2  输入的是 view function 的 name，会返回它所注册的 url
     return 'test page'
 
 class User(db.Model):
@@ -112,3 +130,31 @@ def page_not_found(e): # 接受异常对象作为参数
 def inject_user_name():
     user = User.query.first()
     return {'user': user}
+
+@app.route('/movie/edit/<int:movie_id>', methods=['GET', 'POST'])
+def edit(movie_id):
+    movie = Movie.query.get_or_404(movie_id)
+
+    if request.method == 'POST':  # 处理编辑表单的提交请求
+        title = request.form['title']
+        year = request.form['year']
+
+        if not title or not year or len(year) != 4 or len(title) > 60:
+            flash('Invalid input.')
+            return redirect(url_for('edit', movie_id=movie_id))  # 重定向回对应的编辑页面
+
+        movie.title = title  # 更新标题
+        movie.year = year  # 更新年份
+        db.session.commit()  # 提交数据库会话
+        flash('Item updated.')
+        return redirect(url_for('index'))  # 重定向回主页
+
+    return render_template('edit.html', movie=movie)  # 传入被编辑的电影记录
+
+@app.route('/movie/delete/<int:movie_id>', methods=['POST'])  # 限定只接受 POST 请求
+def delete(movie_id):
+    movie = Movie.query.get_or_404(movie_id)  # 获取电影记录
+    db.session.delete(movie)  # 删除对应的记录
+    db.session.commit()  # 提交数据库会话
+    flash('Item deleted.')
+    return redirect(url_for('index'))  # 重定向回主页
