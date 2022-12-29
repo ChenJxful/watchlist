@@ -15,9 +15,10 @@ else:  # 否则使用四个斜线
     prefix = 'sqlite:////'
 # 首先我们从 flask 包导入 Flask 类，通过实例化这个类，创建一个程序对象 app
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = prefix + os.path.join(app.root_path, 'data.db')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev')
+app.config['SQLALCHEMY_DATABASE_URI'] = prefix + os.path.join(os.path.dirname(app.root_path), os.getenv('DATABASE_FILE', 'data.db'))
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # 关闭对模型修改的监控
-app.config['SECRET_KEY'] = 'dev'  # 等同于 app.secret_key = 'dev' ---- 设置签名所需的密钥
+# app.config['SECRET_KEY'] = 'dev'  # 等同于 app.secret_key = 'dev' ---- 设置签名所需的密钥
 # 在扩展类实例化前加载配置
 db = SQLAlchemy(app)  # 初始化扩展，传入程序实例 app
 
