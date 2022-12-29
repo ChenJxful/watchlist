@@ -110,7 +110,7 @@ def initdb(drop):
     if drop:
         db.drop_all()
     db.create_all()
-    click.echo('Initialize databse.')
+    click.echo('Initialized database.')
 
 # 注册一个创建假用户的命令：forge
 @app.cli.command()

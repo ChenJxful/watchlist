@@ -33,7 +33,9 @@
 				{% endif %}
 			</ul>
 		</nav>
-		{% block content %}{% endblock %}
+		{% for message in get_flashed_messages() %}
+		<div class="alert">{{ message }}</div>
+		{% endfor %} {% block content %}{% endblock %}
 		<footer>
 			<small
 				>&copy; 2018

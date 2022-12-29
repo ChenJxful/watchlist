@@ -10,9 +10,7 @@
 </form>
 {% endif %}
 <!--  -->
-{% for message in get_flashed_messages() %}
-<div class="alert">{{ message }}</div>
-{% endfor %}
+
 <h2>...</h2>
 <ul class="movie-list">
 	{% for movie in movies %}
